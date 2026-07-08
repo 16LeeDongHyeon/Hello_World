@@ -3,101 +3,162 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>웹 테트리스 (Tetris)</title>
+    <title>테트리스</title>
     <style>
+        :root {
+            --bg-color: #0d0e15;
+            --panel-bg: #161925;
+            --border-color: #ff007f;
+            --neon-blue: #00f0ff;
+            --neon-pink: #ff007f;
+            --text-color: #e2e8f0;
+        }
+
         body {
-            background-color: #202020;
-            color: #fff;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
             display: flex;
             flex-direction: column;
             align-items: center;
             justify-content: center;
             height: 100vh;
             margin: 0;
-            overflow: hidden; /* 스크롤바 방지 */
+            overflow: hidden;
+            /* 배경 미세 격자 효과 */
+            background-image: linear-gradient(rgba(255, 255, 255, 0.02) 1px, transparent 1px),
+                              linear-gradient(90deg, rgba(255, 255, 255, 0.02) 1px, transparent 1px);
+            background-size: 20px 20px;
         }
 
         h1 {
-            margin-bottom: 10px;
-            letter-spacing: 2px;
+            margin: 0 0 20px 0;
+            font-size: 2.5rem;
+            font-weight: 900;
+            text-transform: uppercase;
+            letter-spacing: 4px;
+            color: #fff;
+            text-shadow: 0 0 10px var(--neon-pink), 0 0 20px var(--neon-pink);
         }
 
         #game-container {
             display: flex;
-            gap: 20px;
-            background-color: #333;
-            padding: 20px;
-            border-radius: 10px;
-            box-shadow: 0 10px 20px rgba(0,0,0,0.5);
+            gap: 25px;
+            background-color: var(--panel-bg);
+            padding: 25px;
+            border-radius: 16px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.7), 0 0 30px rgba(0, 240, 255, 0.05);
         }
 
-        canvas {
-            border: 2px solid #555;
-            background-color: #111;
+        .canvas-area {
+            position: relative;
+        }
+
+        canvas #tetris {
+            background-color: #07080c;
+            border-radius: 8px;
+            box-shadow: inset 0 0 20px rgba(0,0,0,0.9);
         }
 
         #side-panel {
             display: flex;
             flex-direction: column;
             justify-content: space-between;
-            min-width: 120px;
+            width: 140px;
+        }
+
+        .panel-section {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
         }
 
         .info-box {
-            background-color: #444;
-            padding: 15px;
-            border-radius: 5px;
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            padding: 12px;
+            border-radius: 8px;
             text-align: center;
-            margin-bottom: 15px;
         }
 
         .info-title {
-            font-size: 0.8rem;
-            color: #aaa;
-            margin-bottom: 5px;
+            font-size: 0.75rem;
+            color: #8a92b2;
+            margin-bottom: 6px;
             text-transform: uppercase;
+            letter-spacing: 1px;
         }
 
         .info-value {
-            font-size: 1.5rem;
-            font-weight: bold;
+            font-size: 1.6rem;
+            font-weight: 700;
+            color: var(--neon-blue);
+            text-shadow: 0 0 10px rgba(0, 240, 255, 0.5);
+        }
+
+        #nextCanvas {
+            background-color: #07080c;
+            border-radius: 6px;
+            margin-top: 5px;
+            border: 1px solid rgba(255, 255, 255, 0.05);
         }
 
         #start-btn {
-            padding: 12px;
-            background-color: #28a745;
+            padding: 14px;
+            background: linear-gradient(135deg, var(--neon-pink), #bc00dd);
             color: white;
             border: none;
-            border-radius: 5px;
+            border-radius: 8px;
             cursor: pointer;
             font-weight: bold;
             font-size: 1rem;
-            transition: background 0.2s;
+            letter-spacing: 1px;
+            box-shadow: 0 0 15px rgba(255, 0, 127, 0.4);
+            transition: all 0.2s;
         }
 
         #start-btn:hover {
-            background-color: #218838;
+            transform: translateY(-2px);
+            box-shadow: 0 0 25px rgba(255, 0, 127, 0.7);
+        }
+
+        #start-btn:active {
+            transform: translateY(1px);
         }
 
         #controls-guide {
-            margin-top: 20px;
-            font-size: 0.9rem;
-            color: #aaa;
+            margin-top: 25px;
+            font-size: 0.85rem;
+            color: #636e87;
             text-align: center;
-            line-height: 1.5;
+            line-height: 1.6;
+            background: rgba(22, 25, 37, 0.5);
+            padding: 10px 20px;
+            border-radius: 20px;
+            border: 1px solid rgba(255, 255, 255, 0.03);
+        }
+        
+        #controls-guide strong {
+            color: #8a92b2;
         }
     </style>
 </head>
 <body>
 
-    <h1>TETRIS</h1>
+    <h1>Neon Tetris</h1>
 
     <div id="game-container">
-        <canvas id="tetris" width="300" height="600"></canvas>
+        <div class="canvas-area">
+            <canvas id="tetris" width="300" height="600" style="border: 2px solid var(--neon-blue); box-shadow: 0 0 15px rgba(0, 240, 255, 0.2);"></canvas>
+        </div>
         
         <div id="side-panel">
-            <div>
+            <div class="panel-section">
+                <div class="info-box">
+                    <div class="info-title">NEXT</div>
+                    <canvas id="nextCanvas" width="100" height="100"></canvas>
+                </div>
                 <div class="info-box">
                     <div class="info-title">SCORE</div>
                     <div id="score" class="info-value">0</div>
@@ -112,22 +173,25 @@
     </div>
 
     <div id="controls-guide">
-        <strong>[조작 방법]</strong><br>
-        ← → : 좌우 이동 |  ↑ : 회전<br>
-        ↓ : 소프트 드롭 | Space : 하드 드롭
+        <strong>[CONTROLS]</strong><br>
+        ← → : 이동  |   ↑ : 회전  |  ↓ : 소프트 드롭  |  Space : 하드 드롭
     </div>
 
     <script>
         const canvas = document.getElementById('tetris');
         const context = canvas.getContext('2d');
+        const nextCanvas = document.getElementById('nextCanvas');
+        const nextContext = nextCanvas.getContext('2d');
+        
         const scoreElement = document.getElementById('score');
         const linesElement = document.getElementById('lines');
 
         const ROW = 20;
         const COL = 10;
         const SQ = 30; 
-        const VACANT = '#111'; 
+        const VACANT = '#07080c'; // 빈 그리드 색상
 
+        // 테트로미노 모양 정의
         const PIECES = [
             [ [[1,1,1,1]], [[1],[1],[1],[1]], [[1,1,1,1]], [[1],[1],[1],[1]] ], // I
             [ [[1,1,1],[0,1,0]], [[0,1],[1,1],[0,1]], [[0,1,0],[1,1,1]], [[1,0],[1,1],[1,0]] ], // T
@@ -138,15 +202,27 @@
             [ [[0,1,1],[1,1,0]], [[1,0],[1,1],[0,1]], [[0,1,1],[1,1,0]], [[1,0],[1,1],[0,1]] ]  // S
         ];
 
-        const COLORS = ['#00f0f0', '#a000f0', '#f0a000', '#0000f0', '#f0f000', '#f00000', '#00f000'];
+        // 화려한 네온 컬러 스타일셋 (주조색, 그라데이션 보조색)
+        const COLORS = [
+            { main: '#00f0ff', sub: '#0072ff' }, // I : 시안 블루
+            { main: '#e000ff', sub: '#7000ff' }, // T : 퍼플
+            { main: '#ffaa00', sub: '#ff4500' }, // L : 오렌지
+            { main: '#0033ff', sub: '#0011aa' }, // J : 다크블루
+            { main: '#ffea00', sub: '#ffaa00' }, // O : 옐로우
+            { main: '#ff0055', sub: '#aa0022' }, // Z : 레드핑크
+            { main: '#00ff66', sub: '#00aa33' }  // S : 그린
+        ];
 
         let board = [];
         let score = 0;
         let lines = 0;
         let gameOver = false;
         let gameInterval;
+        
         let currentPiece;
+        let nextPieceIndex;
 
+        // 보드 초기화
         function initBoard() {
             for (let r = 0; r < ROW; r++) {
                 board[r] = [];
@@ -156,26 +232,54 @@
             }
         }
 
-        function drawSquare(x, y, color) {
-            context.fillStyle = color;
-            context.fillRect(x * SQ, y * SQ, SQ, SQ);
-            context.strokeStyle = '#222';
-            context.strokeRect(x * SQ, y * SQ, SQ, SQ);
+        // 입체적인 네온 블록 그리기를 위한 함수수 수정
+        function drawSquare(ctx, x, y, colorObj, size = SQ) {
+            if (colorObj === VACANT) {
+                ctx.fillStyle = VACANT;
+                ctx.fillRect(x * size, y * size, size, size);
+                // 메인 보드에만 미세한 격자선 그리기
+                if(ctx === context) {
+                    ctx.strokeStyle = 'rgba(255,255,255,0.02)';
+                    ctx.strokeRect(x * size, y * size, size, size);
+                }
+            } else {
+                // 그라데이션 효과 적용
+                let gradient = ctx.createLinearGradient(x*size, y*size, (x+1)*size, (y+1)*size);
+                gradient.addColorStop(0, colorObj.main);
+                gradient.addColorStop(1, colorObj.sub);
+                
+                ctx.shadowColor = colorObj.main;
+                ctx.shadowBlur = 6; // 발광 효과
+                
+                ctx.fillStyle = gradient;
+                ctx.fillRect(x * size + 1, y * size + 1, size - 2, size - 2);
+                
+                // 그림자 리셋 (다음 그리기에 영향 주지 않도록)
+                ctx.shadowBlur = 0;
+
+                // 내부 하이라이트 선 선명하게
+                ctx.strokeStyle = 'rgba(255, 255, 255, 0.4)';
+                ctx.lineWidth = 1;
+                ctx.strokeRect(x * size + 2, y * size + 2, size - 4, size - 4);
+            }
         }
 
         function drawBoard() {
             for (let r = 0; r < ROW; r++) {
                 for (let c = 0; c < COL; c++) {
-                    drawSquare(c, r, board[r][c]);
+                    drawSquare(context, c, r, board[r][c]);
                 }
             }
         }
 
-        function Piece(tetromino, color) {
+        // 블록 객체
+        function Piece(tetromino, colorObj, index) {
             this.tetromino = tetromino;
-            this.color = color;
+            this.colorObj = colorObj;
+            this.index = index;
             this.tetrominoN = 0; 
             this.activeTetromino = this.tetromino[this.tetrominoN];
+
             this.x = 3;
             this.y = -2; 
         }
@@ -185,14 +289,14 @@
                 for (let c = 0; c < this.activeTetromino[r].length; c++) {
                     if (this.activeTetromino[r][c]) {
                         if (this.y + r >= 0) {
-                            drawSquare(this.x + c, this.y + r, color);
+                            drawSquare(context, this.x + c, this.y + r, color);
                         }
                     }
                 }
             }
         };
 
-        Piece.prototype.draw = function() { this.fill(this.color); };
+        Piece.prototype.draw = function() { this.fill(this.colorObj); };
         Piece.prototype.unDraw = function() { this.fill(VACANT); };
 
         Piece.prototype.moveDown = function() {
@@ -202,7 +306,7 @@
                 this.draw();
             } else {
                 this.lock();
-                generateNextPiece();
+                spawnPiece();
             }
         };
 
@@ -227,11 +331,8 @@
             let kick = 0;
 
             if (this.collision(0, 0, nextPattern)) {
-                if (this.x > COL / 2) {
-                    kick = -1; 
-                } else {
-                    kick = 1;  
-                }
+                if (this.x > COL / 2) kick = -1; 
+                else kick = 1;  
             }
 
             if (!this.collision(kick, 0, nextPattern)) {
@@ -250,10 +351,10 @@
             }
             this.draw();
             this.lock();
-            generateNextPiece();
+            spawnPiece();
         };
 
-        Piece.prototype.collision = function(x, y, piece) {
+        制造Piece.prototype.collision = function(x, y, piece) {
             for (let r = 0; r < piece.length; r++) {
                 for (let c = 0; c < piece[r].length; c++) {
                     if (!piece[r][c]) continue;
@@ -275,12 +376,12 @@
                     if (!this.activeTetromino[r][c]) continue;
 
                     if (this.y + r < 0) {
-                        alert("Game Over!");
+                        alert("GAME OVER\nFinal Score: " + score);
                         gameOver = true;
                         clearInterval(gameInterval);
                         return;
                     }
-                    board[this.y + r][this.x + c] = this.color;
+                    board[this.y + r][this.x + c] = this.colorObj;
                 }
             }
 
@@ -302,7 +403,7 @@
 
             if (clearedLines > 0) {
                 lines += clearedLines;
-                score += clearedLines * 100;
+                score += clearedLines * 100 * clearedLines; // 멀티라인 클리어 시 가산점
                 scoreElement.innerText = score;
                 linesElement.innerText = lines;
             }
@@ -310,45 +411,69 @@
             drawBoard();
         };
 
-        function randomPiece() {
-            let r = Math.floor(Math.random() * PIECES.length);
-            return new Piece(PIECES[r], COLORS[r]);
-        }
+        // NEXT 블록 창 그리기 기능
+        function drawNextPiece() {
+            nextContext.fillStyle = '#07080c';
+            nextContext.fillRect(0, 0, 100, 100);
+            
+            let nextPiecePattern = PIECES[nextPieceIndex][0];
+            let color = COLORS[nextPieceIndex];
+            
+            // 프리뷰 중앙 정렬 계산
+            let nRows = nextPiecePattern.length;
+            let nCols = nextPiecePattern[0].length;
+            let size = 20; // 프리뷰 전용 블록 크기
+            let offsetX = (100 - nCols * size) / 2;
+            let offsetY = (100 - nRows * size) / 2;
 
-        function generateNextPiece() {
-            if (!gameOver) {
-                currentPiece = randomPiece();
+            for (let r = 0; r < nRows; r++) {
+                for (let c = 0; c < nCols; c++) {
+                    if (nextPiecePattern[r][c]) {
+                        let gradient = nextContext.createLinearGradient(offsetX + c*size, offsetY + r*size, offsetX + (c+1)*size, offsetY + (r+1)*size);
+                        gradient.addColorStop(0, color.main);
+                        gradient.addColorStop(1, color.sub);
+                        
+                        nextContext.shadowColor = color.main;
+                        nextContext.shadowBlur = 4;
+                        nextContext.fillStyle = gradient;
+                        nextContext.fillRect(offsetX + c * size + 1, offsetY + r * size + 1, size - 2, size - 2);
+                        nextContext.shadowBlur = 0;
+                    }
+                }
             }
         }
 
-        // 한글 입력 상태 및 스크롤 다운 버그 방지 개선 코드
+        function spawnPiece() {
+            if (gameOver) return;
+            
+            // 현재 플레이할 블록을 기존 NEXT에서 가져옴
+            currentPiece = new Piece(PIECES[nextPieceIndex], COLORS[nextPieceIndex], nextPieceIndex);
+            
+            // 다음 블록 랜덤 대기
+            nextPieceIndex = Math.floor(Math.random() * PIECES.length);
+            drawNextPiece();
+            
+            currentPiece.draw();
+        }
+
+        // 입력 조작 감지
         document.addEventListener("keydown", event => {
             if (gameOver || !currentPiece) return;
             
-            // 방향키나 스페이스바 입력 시 브라우저 스크롤 기본 동작 막기
             if(["ArrowUp","ArrowDown","ArrowLeft","ArrowRight"," "].includes(event.key)) {
                 event.preventDefault();
             }
 
             switch(event.key) {
-                case "ArrowLeft":
-                    currentPiece.moveLeft();
-                    break;
-                case "ArrowUp":
-                    currentPiece.rotate();
-                    break;
-                case "ArrowRight":
-                    currentPiece.moveRight();
-                    break;
-                case "ArrowDown":
-                    currentPiece.moveDown();
-                    break;
-                case " ":
-                    currentPiece.hardDrop();
-                    break;
+                case "ArrowLeft": currentPiece.moveLeft(); break;
+                case "ArrowUp": currentPiece.rotate(); break;
+                case "ArrowRight": currentPiece.moveRight(); break;
+                case "ArrowDown": currentPiece.moveDown(); break;
+                case " ": currentPiece.hardDrop(); break;
             }
         });
 
+        // 게임 시작
         function startGame() {
             clearInterval(gameInterval);
             initBoard();
@@ -359,20 +484,25 @@
             scoreElement.innerText = score;
             linesElement.innerText = lines;
             
-            currentPiece = randomPiece();
-            currentPiece.draw();
+            // 첫 블록과 다음 블록 무작위 지정
+            nextPieceIndex = Math.floor(Math.random() * PIECES.length);
+            spawnPiece();
             
             gameInterval = setInterval(() => {
                 if (!gameOver) {
                     currentPiece.moveDown();
                 }
-            }, 500);
+            }, 450); // 속도 소폭 상향 조정
 
             document.getElementById('start-btn').innerText = "RESTART";
         }
 
+        // 초기 화면 세팅
         initBoard();
         drawBoard();
+        // 초기 NEXT 박스 공백 처리
+        nextContext.fillStyle = '#07080c';
+        nextContext.fillRect(0, 0, 100, 100);
     </script>
 </body>
 </html>
