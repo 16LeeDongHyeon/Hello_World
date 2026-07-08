@@ -3,10 +3,191 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>My First Git page Open</title>
+    <title>웹 테트리스 (Tetris)</title>
+    <style>
+        body {
+            background-color: #202020;
+            color: #fff;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            margin: 0;
+        }
+
+        h1 {
+            margin-bottom: 10px;
+        }
+
+        #game-container {
+            display: flex;
+            gap: 20px;
+            background-color: #333;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 10px 20px rgba(0,0,0,0.5);
+        }
+
+        canvas {
+            border: 2px solid #555;
+            background-color: #111;
+        }
+
+        #side-panel {
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            min-width: 120px;
+        }
+
+        .info-box {
+            background-color: #444;
+            padding: 15px;
+            border-radius: 5px;
+            text-align: center;
+            margin-bottom: 15px;
+        }
+
+        .info-title {
+            font-size: 0.8rem;
+            color: #aaa;
+            margin-bottom: 5px;
+            text-transform: uppercase;
+        }
+
+        .info-value {
+            font-size: 1.5rem;
+            font-weight: bold;
+        }
+
+        #start-btn {
+            padding: 12px;
+            background-color: #28a745;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: bold;
+            font-size: 1rem;
+            transition: background 0.2s;
+        }
+
+        #start-btn:hover {
+            background-color: #218838;
+        }
+
+        #controls-guide {
+            margin-top: 20px;
+            font-size: 0.9rem;
+            color: #aaa;
+            text-align: center;
+            line-height: 1.5;
+        }
+    </style>
 </head>
 <body>
-    <h1>Hello My Page</h1>
-    <h2>Welcome</h2>
-</body>
-</html>
+
+    <h1>TETRIS</h1>
+
+    <div id="game-container">
+        <canvas id="tetris" width="300" height="600"></canvas>
+        
+        <div id="side-panel">
+            <div>
+                <div class="info-box">
+                    <div class="info-title">SCORE</div>
+                    <div id="score" class="info-value">0</div>
+                </div>
+                <div class="info-box">
+                    <div class="info-title">LINES</div>
+                    <div id="lines" class="info-value">0</div>
+                </div>
+            </div>
+            <button id="start-btn" onclick="startGame()">START</button>
+        </div>
+    </div>
+
+    <div id="controls-guide">
+        <strong>[조작 방법]</strong><br>
+        ← → : 좌우 이동 |  ↑ : 회전<br>
+        ↓ : 소프트 드롭 | Space : 하드 드롭
+    </div>
+
+    <script>
+        const canvas = document.getElementById('tetris');
+        const context = canvas.getContext('2d');
+        const scoreElement = document.getElementById('score');
+        const linesElement = document.getElementById('lines');
+
+        // 블록 크기 및 그리드 설정 (10x20)
+        const ROW = 20;
+        const COL = 10;
+        const SQ = 30; // 1칸의 픽셀 크기
+        const VACANT = '#111'; // 빈 칸 색상
+
+        // 테트로미노 모양 및 색상 정의
+        const PIECES = [
+            [ [[1,1,1,1]], [[1],[1],[1],[1]], [[1,1,1,1]], [[1],[1],[1],[1]] ], // I
+            [ [[1,1,1],[0,1,0]], [[0,1],[1,1],[0,1]], [[0,1,0],[1,1,1]], [[1,0],[1,1],[1,0]] ], // T
+            [ [[1,1,1],[1,0,0]], [[1,1],[0,1],[0,1]], [[0,0,1],[1,1,1]], [[1,0],[1,0],[1,1]] ], // L
+            [ [[1,1,1],[0,0,1]], [[0,1],[0,1],[1,1]], [[1,0,0],[1,1,1]], [[1,1],[1,0],[1,0]] ], // J
+            [ [[1,1],[1,1]], [[1,1],[1,1]], [[1,1],[1,1]], [[1,1],[1,1]] ], // O
+            [ [[1,1,0],[0,1,1]], [[0,1],[1,1],[1,0]], [[1,1,0],[0,1,1]], [[0,1],[1,1],[1,0]] ], // Z
+            [ [[0,1,1],[1,1,0]], [[1,0],[1,1],[0,1]], [[0,1,1],[1,1,0]], [[1,0],[1,1],[0,1]] ]  // S
+        ];
+
+        const COLORS = ['#00f0f0', '#a000f0', '#f0a000', '#0000f0', '#f0f000', '#f00000', '#00f000'];
+
+        let board = [];
+        let score = 0;
+        let lines = 0;
+        let gameOver = false;
+        let gameInterval;
+        let currentPiece;
+
+        // 보드 초기화
+        function initBoard() {
+            for (let r = 0; r < ROW; r++) {
+                board[r] = [];
+                for (let c = 0; c < COL; c++) {
+                    board[r][c] = VACANT;
+                }
+            }
+        }
+
+        // 칸 그리기 함수
+        function drawSquare(x, y, color) {
+            context.fillStyle = color;
+            context.fillRect(x * SQ, y * SQ, SQ, SQ);
+            context.strokeStyle = '#222';
+            context.strokeRect(x * SQ, y * SQ, SQ, SQ);
+        }
+
+        // 보드 전체 그리기
+        function drawBoard() {
+            for (let r = 0; r < ROW; r++) {
+                for (let c = 0; c < COL; c++) {
+                    drawSquare(c, r, board[r][c]);
+                }
+            }
+        }
+
+        // 블록(Piece) 객체 생성자
+        function Piece(tetromino, color) {
+            this.tetromino = tetromino;
+            this.color = color;
+            this.tetrominoN = 0; // 회전 상태 index
+            this.activeTetromino = this.tetromino[this.tetrominoN];
+
+            // 시작 위치 (중앙 상단)
+            this.x = 3;
+            this.y = -2; 
+        }
+
+        // 블록 그리기/지우기 공통 함수
+        Piece.prototype.fill = function(color) {
+            for (let r = 0; r < this.activeTetromino.length; r++) {
+                for (let c = 0; c < this.activeTetromino[r].length; c++) {
+                    if (this.activeTetromino
