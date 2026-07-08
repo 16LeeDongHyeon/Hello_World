@@ -50,11 +50,7 @@
             box-shadow: 0 20px 40px rgba(0, 0, 0, 0.7), 0 0 30px rgba(0, 240, 255, 0.05);
         }
 
-        .canvas-area {
-            position: relative;
-        }
-
-        canvas #tetris {
+        canvas#tetris {
             background-color: #07080c;
             border-radius: 8px;
             box-shadow: inset 0 0 20px rgba(0,0,0,0.9);
@@ -297,3 +293,189 @@
                 this.lock();
                 spawnPiece();
             }
+        };
+
+        Piece.prototype.moveRight = function() {
+            if (!this.collision(1, 0, this.activeTetromino)) {
+                this.unDraw();
+                this.x++;
+                this.draw();
+            }
+        };
+
+        Piece.prototype.moveLeft = function() {
+            if (!this.collision(-1, 0, this.activeTetromino)) {
+                this.unDraw();
+                this.x--;
+                this.draw();
+            }
+        };
+
+        Piece.prototype.rotate = function() {
+            let nextPattern = this.tetromino[(this.tetrominoN + 1) % this.tetromino.length];
+            let kick = 0;
+
+            if (this.collision(0, 0, nextPattern)) {
+                if (this.x > COL / 2) kick = -1; 
+                else kick = 1;  
+            }
+
+            if (!this.collision(kick, 0, nextPattern)) {
+                this.unDraw();
+                this.x += kick;
+                this.tetrominoN = (this.tetrominoN + 1) % this.tetromino.length;
+                this.activeTetromino = nextPattern;
+                this.draw();
+            }
+        };
+
+        Piece.prototype.hardDrop = function() {
+            this.unDraw();
+            while (!this.collision(0, 1, this.activeTetromino)) {
+                this.y++;
+            }
+            this.draw();
+            this.lock();
+            spawnPiece();
+        };
+
+        Piece.prototype.collision = function(x, y, piece) {
+            for (let r = 0; r < piece.length; r++) {
+                for (let c = 0; c < piece[r].length; c++) {
+                    if (!piece[r][c]) continue;
+
+                    let newX = this.x + c + x;
+                    let newY = this.y + r + y;
+
+                    if (newX < 0 || newX >= COL || newY >= ROW) return true;
+                    if (newY < 0) continue; 
+                    if (board[newY][newX] !== VACANT) return true;
+                }
+            }
+            return false;
+        };
+
+        Piece.prototype.lock = function() {
+            for (let r = 0; r < this.activeTetromino.length; r++) {
+                for (let c = 0; c < this.activeTetromino[r].length; c++) {
+                    if (!this.activeTetromino[r][c]) continue;
+
+                    if (this.y + r < 0) {
+                        alert("GAME OVER\nFinal Score: " + score);
+                        gameOver = true;
+                        clearInterval(gameInterval);
+                        return;
+                    }
+                    board[this.y + r][this.x + c] = this.colorObj;
+                }
+            }
+
+            let clearedLines = 0;
+            for (let r = 0; r < ROW; r++) {
+                let isRowFull = true;
+                for (let c = 0; c < COL; c++) {
+                    if (board[r][c] === VACANT) {
+                        isRowFull = false;
+                        break;
+                    }
+                }
+                if (isRowFull) {
+                    board.splice(r, 1);
+                    board.unshift(new Array(COL).fill(VACANT));
+                    clearedLines++;
+                }
+            }
+
+            if (clearedLines > 0) {
+                lines += clearedLines;
+                score += clearedLines * 100 * clearedLines; 
+                scoreElement.innerText = score;
+                linesElement.innerText = lines;
+            }
+
+            drawBoard();
+        };
+
+        function drawNextPiece() {
+            nextContext.fillStyle = '#07080c';
+            nextContext.fillRect(0, 0, 100, 100);
+            
+            let nextPiecePattern = PIECES[nextPieceIndex][0];
+            let color = COLORS[nextPieceIndex];
+            
+            let nRows = nextPiecePattern.length;
+            let nCols = nextPiecePattern[0].length;
+            let size = 20; 
+            let offsetX = (100 - nCols * size) / 2;
+            let offsetY = (100 - nRows * size) / 2;
+
+            for (let r = 0; r < nRows; r++) {
+                for (let c = 0; c < nCols; c++) {
+                    if (nextPiecePattern[r][c]) {
+                        let gradient = nextContext.createLinearGradient(offsetX + c*size, offsetY + r*size, offsetX + (c+1)*size, offsetY + (r+1)*size);
+                        gradient.addColorStop(0, color.main);
+                        gradient.addColorStop(1, color.sub);
+                        
+                        nextContext.shadowColor = color.main;
+                        nextContext.shadowBlur = 4;
+                        nextContext.fillStyle = gradient;
+                        nextContext.fillRect(offsetX + c * size + 1, offsetY + r * size + 1, size - 2, size - 2);
+                        nextContext.shadowBlur = 0;
+                    }
+                }
+            }
+        }
+
+        function spawnPiece() {
+            if (gameOver) return;
+            currentPiece = new Piece(PIECES[nextPieceIndex], COLORS[nextPieceIndex], nextPieceIndex);
+            nextPieceIndex = Math.floor(Math.random() * PIECES.length);
+            drawNextPiece();
+            currentPiece.draw();
+        }
+
+        document.addEventListener("keydown", event => {
+            if (gameOver || !currentPiece) return;
+            
+            if(["ArrowUp","ArrowDown","ArrowLeft","ArrowRight"," "].includes(event.key)) {
+                event.preventDefault();
+            }
+
+            switch(event.key) {
+                case "ArrowLeft": currentPiece.moveLeft(); break;
+                case "ArrowUp": currentPiece.rotate(); break;
+                case "ArrowRight": currentPiece.moveRight(); break;
+                case "ArrowDown": currentPiece.moveDown(); break;
+                case " ": currentPiece.hardDrop(); break;
+            }
+        });
+
+        function startGame() {
+            clearInterval(gameInterval);
+            initBoard();
+            drawBoard();
+            score = 0;
+            lines = 0;
+            gameOver = false;
+            scoreElement.innerText = score;
+            linesElement.innerText = lines;
+            
+            nextPieceIndex = Math.floor(Math.random() * PIECES.length);
+            spawnPiece();
+            
+            gameInterval = setInterval(() => {
+                if (!gameOver) {
+                    currentPiece.moveDown();
+                }
+            }, 450); 
+
+            document.getElementById('start-btn').innerText = "RESTART";
+        }
+
+        initBoard();
+        drawBoard();
+        nextContext.fillStyle = '#07080c';
+        nextContext.fillRect(0, 0, 100, 100);
+    </script>
+</body>
+</html>
