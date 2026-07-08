@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>테트리스</title>
+    <title>테트리스 (Tetris)</title>
     <style>
         :root {
             --bg-color: #0d0e15;
@@ -25,7 +25,6 @@
             height: 100vh;
             margin: 0;
             overflow: hidden;
-            /* 배경 미세 격자 효과 */
             background-image: linear-gradient(rgba(255, 255, 255, 0.02) 1px, transparent 1px),
                               linear-gradient(90deg, rgba(255, 255, 255, 0.02) 1px, transparent 1px);
             background-size: 20px 20px;
@@ -38,7 +37,7 @@
             text-transform: uppercase;
             letter-spacing: 4px;
             color: #fff;
-            text-shadow: 0 0 10px var(--neon-pink), 0 0 20px var(--neon-pink);
+            text-shadow: 0 0 10px var(--neon-blue), 0 0 20px var(--neon-blue);
         }
 
         #game-container {
@@ -146,7 +145,7 @@
 </head>
 <body>
 
-    <h1>Neon Tetris</h1>
+    <h1>TETRIS</h1>
 
     <div id="game-container">
         <div class="canvas-area">
@@ -189,28 +188,26 @@
         const ROW = 20;
         const COL = 10;
         const SQ = 30; 
-        const VACANT = '#07080c'; // 빈 그리드 색상
+        const VACANT = '#07080c'; 
 
-        // 테트로미노 모양 정의
         const PIECES = [
-            [ [[1,1,1,1]], [[1],[1],[1],[1]], [[1,1,1,1]], [[1],[1],[1],[1]] ], // I
-            [ [[1,1,1],[0,1,0]], [[0,1],[1,1],[0,1]], [[0,1,0],[1,1,1]], [[1,0],[1,1],[1,0]] ], // T
-            [ [[1,1,1],[1,0,0]], [[1,1],[0,1],[0,1]], [[0,0,1],[1,1,1]], [[1,0],[1,0],[1,1]] ], // L
-            [ [[1,1,1],[0,0,1]], [[0,1],[0,1],[1,1]], [[1,0,0],[1,1,1]], [[1,1],[1,0],[1,0]] ], // J
-            [ [[1,1],[1,1]], [[1,1],[1,1]], [[1,1],[1,1]], [[1,1],[1,1]] ], // O
-            [ [[1,1,0],[0,1,1]], [[0,1],[1,1],[1,0]], [[1,1,0],[0,1,1]], [[0,1],[1,1],[1,0]] ], // Z
-            [ [[0,1,1],[1,1,0]], [[1,0],[1,1],[0,1]], [[0,1,1],[1,1,0]], [[1,0],[1,1],[0,1]] ]  // S
+            [ [[1,1,1,1]], [[1],[1],[1],[1]], [[1,1,1,1]], [[1],[1],[1],[1]] ], 
+            [ [[1,1,1],[0,1,0]], [[0,1],[1,1],[0,1]], [[0,1,0],[1,1,1]], [[1,0],[1,1],[1,0]] ], 
+            [ [[1,1,1],[1,0,0]], [[1,1],[0,1],[0,1]], [[0,0,1],[1,1,1]], [[1,0],[1,0],[1,1]] ], 
+            [ [[1,1,1],[0,0,1]], [[0,1],[0,1],[1,1]], [[1,0,0],[1,1,1]], [[1,1],[1,0],[1,0]] ], 
+            [ [[1,1],[1,1]], [[1,1],[1,1]], [[1,1],[1,1]], [[1,1],[1,1]] ], 
+            [ [[1,1,0],[0,1,1]], [[0,1],[1,1],[1,0]], [[1,1,0],[0,1,1]], [[0,1],[1,1],[1,0]] ], 
+            [ [[0,1,1],[1,1,0]], [[1,0],[1,1],[0,1]], [[0,1,1],[1,1,0]], [[1,0],[1,1],[0,1]] ]  
         ];
 
-        // 화려한 네온 컬러 스타일셋 (주조색, 그라데이션 보조색)
         const COLORS = [
-            { main: '#00f0ff', sub: '#0072ff' }, // I : 시안 블루
-            { main: '#e000ff', sub: '#7000ff' }, // T : 퍼플
-            { main: '#ffaa00', sub: '#ff4500' }, // L : 오렌지
-            { main: '#0033ff', sub: '#0011aa' }, // J : 다크블루
-            { main: '#ffea00', sub: '#ffaa00' }, // O : 옐로우
-            { main: '#ff0055', sub: '#aa0022' }, // Z : 레드핑크
-            { main: '#00ff66', sub: '#00aa33' }  // S : 그린
+            { main: '#00f0ff', sub: '#0072ff' }, 
+            { main: '#e000ff', sub: '#7000ff' }, 
+            { main: '#ffaa00', sub: '#ff4500' }, 
+            { main: '#0033ff', sub: '#0011aa' }, 
+            { main: '#ffea00', sub: '#ffaa00' }, 
+            { main: '#ff0055', sub: '#aa0022' }, 
+            { main: '#00ff66', sub: '#00aa33' }  
         ];
 
         let board = [];
@@ -222,7 +219,6 @@
         let currentPiece;
         let nextPieceIndex;
 
-        // 보드 초기화
         function initBoard() {
             for (let r = 0; r < ROW; r++) {
                 board[r] = [];
@@ -232,32 +228,27 @@
             }
         }
 
-        // 입체적인 네온 블록 그리기를 위한 함수수 수정
         function drawSquare(ctx, x, y, colorObj, size = SQ) {
             if (colorObj === VACANT) {
                 ctx.fillStyle = VACANT;
                 ctx.fillRect(x * size, y * size, size, size);
-                // 메인 보드에만 미세한 격자선 그리기
                 if(ctx === context) {
                     ctx.strokeStyle = 'rgba(255,255,255,0.02)';
                     ctx.strokeRect(x * size, y * size, size, size);
                 }
             } else {
-                // 그라데이션 효과 적용
                 let gradient = ctx.createLinearGradient(x*size, y*size, (x+1)*size, (y+1)*size);
                 gradient.addColorStop(0, colorObj.main);
                 gradient.addColorStop(1, colorObj.sub);
                 
                 ctx.shadowColor = colorObj.main;
-                ctx.shadowBlur = 6; // 발광 효과
+                ctx.shadowBlur = 6; 
                 
                 ctx.fillStyle = gradient;
                 ctx.fillRect(x * size + 1, y * size + 1, size - 2, size - 2);
                 
-                // 그림자 리셋 (다음 그리기에 영향 주지 않도록)
                 ctx.shadowBlur = 0;
 
-                // 내부 하이라이트 선 선명하게
                 ctx.strokeStyle = 'rgba(255, 255, 255, 0.4)';
                 ctx.lineWidth = 1;
                 ctx.strokeRect(x * size + 2, y * size + 2, size - 4, size - 4);
@@ -272,14 +263,12 @@
             }
         }
 
-        // 블록 객체
         function Piece(tetromino, colorObj, index) {
             this.tetromino = tetromino;
             this.colorObj = colorObj;
             this.index = index;
             this.tetrominoN = 0; 
             this.activeTetromino = this.tetromino[this.tetrominoN];
-
             this.x = 3;
             this.y = -2; 
         }
@@ -308,201 +297,3 @@
                 this.lock();
                 spawnPiece();
             }
-        };
-
-        Piece.prototype.moveRight = function() {
-            if (!this.collision(1, 0, this.activeTetromino)) {
-                this.unDraw();
-                this.x++;
-                this.draw();
-            }
-        };
-
-        Piece.prototype.moveLeft = function() {
-            if (!this.collision(-1, 0, this.activeTetromino)) {
-                this.unDraw();
-                this.x--;
-                this.draw();
-            }
-        };
-
-        Piece.prototype.rotate = function() {
-            let nextPattern = this.tetromino[(this.tetrominoN + 1) % this.tetromino.length];
-            let kick = 0;
-
-            if (this.collision(0, 0, nextPattern)) {
-                if (this.x > COL / 2) kick = -1; 
-                else kick = 1;  
-            }
-
-            if (!this.collision(kick, 0, nextPattern)) {
-                this.unDraw();
-                this.x += kick;
-                this.tetrominoN = (this.tetrominoN + 1) % this.tetromino.length;
-                this.activeTetromino = nextPattern;
-                this.draw();
-            }
-        };
-
-        Piece.prototype.hardDrop = function() {
-            this.unDraw();
-            while (!this.collision(0, 1, this.activeTetromino)) {
-                this.y++;
-            }
-            this.draw();
-            this.lock();
-            spawnPiece();
-        };
-
-        制造Piece.prototype.collision = function(x, y, piece) {
-            for (let r = 0; r < piece.length; r++) {
-                for (let c = 0; c < piece[r].length; c++) {
-                    if (!piece[r][c]) continue;
-
-                    let newX = this.x + c + x;
-                    let newY = this.y + r + y;
-
-                    if (newX < 0 || newX >= COL || newY >= ROW) return true;
-                    if (newY < 0) continue; 
-                    if (board[newY][newX] !== VACANT) return true;
-                }
-            }
-            return false;
-        };
-
-        Piece.prototype.lock = function() {
-            for (let r = 0; r < this.activeTetromino.length; r++) {
-                for (let c = 0; c < this.activeTetromino[r].length; c++) {
-                    if (!this.activeTetromino[r][c]) continue;
-
-                    if (this.y + r < 0) {
-                        alert("GAME OVER\nFinal Score: " + score);
-                        gameOver = true;
-                        clearInterval(gameInterval);
-                        return;
-                    }
-                    board[this.y + r][this.x + c] = this.colorObj;
-                }
-            }
-
-            let clearedLines = 0;
-            for (let r = 0; r < ROW; r++) {
-                let isRowFull = true;
-                for (let c = 0; c < COL; c++) {
-                    if (board[r][c] === VACANT) {
-                        isRowFull = false;
-                        break;
-                    }
-                }
-                if (isRowFull) {
-                    board.splice(r, 1);
-                    board.unshift(new Array(COL).fill(VACANT));
-                    clearedLines++;
-                }
-            }
-
-            if (clearedLines > 0) {
-                lines += clearedLines;
-                score += clearedLines * 100 * clearedLines; // 멀티라인 클리어 시 가산점
-                scoreElement.innerText = score;
-                linesElement.innerText = lines;
-            }
-
-            drawBoard();
-        };
-
-        // NEXT 블록 창 그리기 기능
-        function drawNextPiece() {
-            nextContext.fillStyle = '#07080c';
-            nextContext.fillRect(0, 0, 100, 100);
-            
-            let nextPiecePattern = PIECES[nextPieceIndex][0];
-            let color = COLORS[nextPieceIndex];
-            
-            // 프리뷰 중앙 정렬 계산
-            let nRows = nextPiecePattern.length;
-            let nCols = nextPiecePattern[0].length;
-            let size = 20; // 프리뷰 전용 블록 크기
-            let offsetX = (100 - nCols * size) / 2;
-            let offsetY = (100 - nRows * size) / 2;
-
-            for (let r = 0; r < nRows; r++) {
-                for (let c = 0; c < nCols; c++) {
-                    if (nextPiecePattern[r][c]) {
-                        let gradient = nextContext.createLinearGradient(offsetX + c*size, offsetY + r*size, offsetX + (c+1)*size, offsetY + (r+1)*size);
-                        gradient.addColorStop(0, color.main);
-                        gradient.addColorStop(1, color.sub);
-                        
-                        nextContext.shadowColor = color.main;
-                        nextContext.shadowBlur = 4;
-                        nextContext.fillStyle = gradient;
-                        nextContext.fillRect(offsetX + c * size + 1, offsetY + r * size + 1, size - 2, size - 2);
-                        nextContext.shadowBlur = 0;
-                    }
-                }
-            }
-        }
-
-        function spawnPiece() {
-            if (gameOver) return;
-            
-            // 현재 플레이할 블록을 기존 NEXT에서 가져옴
-            currentPiece = new Piece(PIECES[nextPieceIndex], COLORS[nextPieceIndex], nextPieceIndex);
-            
-            // 다음 블록 랜덤 대기
-            nextPieceIndex = Math.floor(Math.random() * PIECES.length);
-            drawNextPiece();
-            
-            currentPiece.draw();
-        }
-
-        // 입력 조작 감지
-        document.addEventListener("keydown", event => {
-            if (gameOver || !currentPiece) return;
-            
-            if(["ArrowUp","ArrowDown","ArrowLeft","ArrowRight"," "].includes(event.key)) {
-                event.preventDefault();
-            }
-
-            switch(event.key) {
-                case "ArrowLeft": currentPiece.moveLeft(); break;
-                case "ArrowUp": currentPiece.rotate(); break;
-                case "ArrowRight": currentPiece.moveRight(); break;
-                case "ArrowDown": currentPiece.moveDown(); break;
-                case " ": currentPiece.hardDrop(); break;
-            }
-        });
-
-        // 게임 시작
-        function startGame() {
-            clearInterval(gameInterval);
-            initBoard();
-            drawBoard();
-            score = 0;
-            lines = 0;
-            gameOver = false;
-            scoreElement.innerText = score;
-            linesElement.innerText = lines;
-            
-            // 첫 블록과 다음 블록 무작위 지정
-            nextPieceIndex = Math.floor(Math.random() * PIECES.length);
-            spawnPiece();
-            
-            gameInterval = setInterval(() => {
-                if (!gameOver) {
-                    currentPiece.moveDown();
-                }
-            }, 450); // 속도 소폭 상향 조정
-
-            document.getElementById('start-btn').innerText = "RESTART";
-        }
-
-        // 초기 화면 세팅
-        initBoard();
-        drawBoard();
-        // 초기 NEXT 박스 공백 처리
-        nextContext.fillStyle = '#07080c';
-        nextContext.fillRect(0, 0, 100, 100);
-    </script>
-</body>
-</html>
