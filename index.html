@@ -15,10 +15,12 @@
             justify-content: center;
             height: 100vh;
             margin: 0;
+            overflow: hidden; /* 스크롤바 방지 */
         }
 
         h1 {
             margin-bottom: 10px;
+            letter-spacing: 2px;
         }
 
         #game-container {
@@ -121,13 +123,11 @@
         const scoreElement = document.getElementById('score');
         const linesElement = document.getElementById('lines');
 
-        // 블록 크기 및 그리드 설정 (10x20)
         const ROW = 20;
         const COL = 10;
-        const SQ = 30; // 1칸의 픽셀 크기
-        const VACANT = '#111'; // 빈 칸 색상
+        const SQ = 30; 
+        const VACANT = '#111'; 
 
-        // 테트로미노 모양 및 색상 정의
         const PIECES = [
             [ [[1,1,1,1]], [[1],[1],[1],[1]], [[1,1,1,1]], [[1],[1],[1],[1]] ], // I
             [ [[1,1,1],[0,1,0]], [[0,1],[1,1],[0,1]], [[0,1,0],[1,1,1]], [[1,0],[1,1],[1,0]] ], // T
@@ -147,7 +147,6 @@
         let gameInterval;
         let currentPiece;
 
-        // 보드 초기화
         function initBoard() {
             for (let r = 0; r < ROW; r++) {
                 board[r] = [];
@@ -157,7 +156,6 @@
             }
         }
 
-        // 칸 그리기 함수
         function drawSquare(x, y, color) {
             context.fillStyle = color;
             context.fillRect(x * SQ, y * SQ, SQ, SQ);
@@ -165,7 +163,6 @@
             context.strokeRect(x * SQ, y * SQ, SQ, SQ);
         }
 
-        // 보드 전체 그리기
         function drawBoard() {
             for (let r = 0; r < ROW; r++) {
                 for (let c = 0; c < COL; c++) {
@@ -174,20 +171,208 @@
             }
         }
 
-        // 블록(Piece) 객체 생성자
         function Piece(tetromino, color) {
             this.tetromino = tetromino;
             this.color = color;
-            this.tetrominoN = 0; // 회전 상태 index
+            this.tetrominoN = 0; 
             this.activeTetromino = this.tetromino[this.tetrominoN];
-
-            // 시작 위치 (중앙 상단)
             this.x = 3;
             this.y = -2; 
         }
 
-        // 블록 그리기/지우기 공통 함수
         Piece.prototype.fill = function(color) {
             for (let r = 0; r < this.activeTetromino.length; r++) {
                 for (let c = 0; c < this.activeTetromino[r].length; c++) {
-                    if (this.activeTetromino
+                    if (this.activeTetromino[r][c]) {
+                        if (this.y + r >= 0) {
+                            drawSquare(this.x + c, this.y + r, color);
+                        }
+                    }
+                }
+            }
+        };
+
+        Piece.prototype.draw = function() { this.fill(this.color); };
+        Piece.prototype.unDraw = function() { this.fill(VACANT); };
+
+        Piece.prototype.moveDown = function() {
+            if (!this.collision(0, 1, this.activeTetromino)) {
+                this.unDraw();
+                this.y++;
+                this.draw();
+            } else {
+                this.lock();
+                generateNextPiece();
+            }
+        };
+
+        Piece.prototype.moveRight = function() {
+            if (!this.collision(1, 0, this.activeTetromino)) {
+                this.unDraw();
+                this.x++;
+                this.draw();
+            }
+        };
+
+        Piece.prototype.moveLeft = function() {
+            if (!this.collision(-1, 0, this.activeTetromino)) {
+                this.unDraw();
+                this.x--;
+                this.draw();
+            }
+        };
+
+        Piece.prototype.rotate = function() {
+            let nextPattern = this.tetromino[(this.tetrominoN + 1) % this.tetromino.length];
+            let kick = 0;
+
+            if (this.collision(0, 0, nextPattern)) {
+                if (this.x > COL / 2) {
+                    kick = -1; 
+                } else {
+                    kick = 1;  
+                }
+            }
+
+            if (!this.collision(kick, 0, nextPattern)) {
+                this.unDraw();
+                this.x += kick;
+                this.tetrominoN = (this.tetrominoN + 1) % this.tetromino.length;
+                this.activeTetromino = nextPattern;
+                this.draw();
+            }
+        };
+
+        Piece.prototype.hardDrop = function() {
+            this.unDraw();
+            while (!this.collision(0, 1, this.activeTetromino)) {
+                this.y++;
+            }
+            this.draw();
+            this.lock();
+            generateNextPiece();
+        };
+
+        Piece.prototype.collision = function(x, y, piece) {
+            for (let r = 0; r < piece.length; r++) {
+                for (let c = 0; c < piece[r].length; c++) {
+                    if (!piece[r][c]) continue;
+
+                    let newX = this.x + c + x;
+                    let newY = this.y + r + y;
+
+                    if (newX < 0 || newX >= COL || newY >= ROW) return true;
+                    if (newY < 0) continue; 
+                    if (board[newY][newX] !== VACANT) return true;
+                }
+            }
+            return false;
+        };
+
+        Piece.prototype.lock = function() {
+            for (let r = 0; r < this.activeTetromino.length; r++) {
+                for (let c = 0; c < this.activeTetromino[r].length; c++) {
+                    if (!this.activeTetromino[r][c]) continue;
+
+                    if (this.y + r < 0) {
+                        alert("Game Over!");
+                        gameOver = true;
+                        clearInterval(gameInterval);
+                        return;
+                    }
+                    board[this.y + r][this.x + c] = this.color;
+                }
+            }
+
+            let clearedLines = 0;
+            for (let r = 0; r < ROW; r++) {
+                let isRowFull = true;
+                for (let c = 0; c < COL; c++) {
+                    if (board[r][c] === VACANT) {
+                        isRowFull = false;
+                        break;
+                    }
+                }
+                if (isRowFull) {
+                    board.splice(r, 1);
+                    board.unshift(new Array(COL).fill(VACANT));
+                    clearedLines++;
+                }
+            }
+
+            if (clearedLines > 0) {
+                lines += clearedLines;
+                score += clearedLines * 100;
+                scoreElement.innerText = score;
+                linesElement.innerText = lines;
+            }
+
+            drawBoard();
+        };
+
+        function randomPiece() {
+            let r = Math.floor(Math.random() * PIECES.length);
+            return new Piece(PIECES[r], COLORS[r]);
+        }
+
+        function generateNextPiece() {
+            if (!gameOver) {
+                currentPiece = randomPiece();
+            }
+        }
+
+        // 한글 입력 상태 및 스크롤 다운 버그 방지 개선 코드
+        document.addEventListener("keydown", event => {
+            if (gameOver || !currentPiece) return;
+            
+            // 방향키나 스페이스바 입력 시 브라우저 스크롤 기본 동작 막기
+            if(["ArrowUp","ArrowDown","ArrowLeft","ArrowRight"," "].includes(event.key)) {
+                event.preventDefault();
+            }
+
+            switch(event.key) {
+                case "ArrowLeft":
+                    currentPiece.moveLeft();
+                    break;
+                case "ArrowUp":
+                    currentPiece.rotate();
+                    break;
+                case "ArrowRight":
+                    currentPiece.moveRight();
+                    break;
+                case "ArrowDown":
+                    currentPiece.moveDown();
+                    break;
+                case " ":
+                    currentPiece.hardDrop();
+                    break;
+            }
+        });
+
+        function startGame() {
+            clearInterval(gameInterval);
+            initBoard();
+            drawBoard();
+            score = 0;
+            lines = 0;
+            gameOver = false;
+            scoreElement.innerText = score;
+            linesElement.innerText = lines;
+            
+            currentPiece = randomPiece();
+            currentPiece.draw();
+            
+            gameInterval = setInterval(() => {
+                if (!gameOver) {
+                    currentPiece.moveDown();
+                }
+            }, 500);
+
+            document.getElementById('start-btn').innerText = "RESTART";
+        }
+
+        initBoard();
+        drawBoard();
+    </script>
+</body>
+</html>
